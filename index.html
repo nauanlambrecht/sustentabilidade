@@ -27,7 +27,6 @@
       font-weight: bold;
       color: #00ff9d;
     }
-
     .hero {
       height: 100vh;
       position: relative;
@@ -39,7 +38,6 @@
       background: linear-gradient(to bottom, #0a6cff, #001f3f);
       overflow: hidden;
     }
-
     .trash {
       position: absolute;
       font-size: 48px;
@@ -51,7 +49,6 @@
     }
     .trash:active { transform: scale(1.5); cursor: grabbing; }
 
-    /* Lixeiras */
     .bins-container {
       position: absolute;
       bottom: 40px;
@@ -75,13 +72,11 @@
       transform: scale(1.1);
       background: rgba(0,0,0,0.85);
     }
-    .bin.correct { border-color: #00ff9d; }
     .bin-label {
       font-size: 1.1rem;
       margin-top: 8px;
       font-weight: bold;
     }
-
     .info-panel {
       position: absolute;
       top: 130px;
@@ -96,7 +91,6 @@
       border-radius: 20px;
       backdrop-filter: blur(8px);
     }
-
     .score {
       font-size: 1.9rem;
       margin: 12px 0;
@@ -117,7 +111,6 @@
       width: 0%;
       transition: width 0.4s ease;
     }
-
     button {
       display: block;
       margin: 40px auto;
@@ -130,19 +123,36 @@
       cursor: pointer;
       font-weight: bold;
     }
+    .wave {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 120px;
+      background: linear-gradient(transparent, rgba(255,255,255,0.15));
+      pointer-events: none;
+      animation: wave 8s linear infinite;
+    }
+    @keyframes wave {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(-25%); }
+      100% { transform: translateX(0); }
+    }
   </style>
 </head>
 <body>
-
   <header>
     <div class="logo">🌊 Agrinho 2026</div>
     <h1 style="font-size: 1.35rem; margin-top: 5px;">Mar Limpo, Futuro Sustentável</h1>
   </header>
 
   <section class="hero">
-    <div id="ocean"></div>
+    <div id="ocean">
+      <div class="wave"></div>
+      <div class="wave" style="animation-delay: -3s; opacity: 0.7;"></div>
+    </div>
 
-    <!-- 4 Lixeiras -->
+    <!-- Lixeiras -->
     <div class="bins-container" id="bins">
       <div class="bin" data-type="reciclavel">
         <div style="font-size: 60px;">♻️</div>
@@ -165,14 +175,14 @@
     <div class="info-panel">
       <h2 style="font-size: 2.7rem; text-shadow: 0 0 15px black;">Limpe o Oceano!</h2>
       <p style="font-size: 1.35rem;">Arraste cada lixo para a lixeira <strong>certa</strong></p>
-      <div class="score" id="score">Lixo coletado: <strong>0</strong>/30</div>
+      <div class="score" id="score">Lixo coletado: <strong>0</strong>/40</div>
       <div class="progress-bar"><div class="progress" id="progress"></div></div>
     </div>
   </section>
 
-  <section class="info">
-    <h2>Por que isso é importante?</h2>
-    <p style="text-align:center; font-size:1.35rem; max-width:900px; margin:0 auto 40px;">
+  <section class="info" style="padding: 60px 20px; background: rgba(0,30,60,0.9); text-align:center;">
+    <h2 style="font-size: 2.2rem; margin-bottom: 20px;">Por que isso é importante?</h2>
+    <p style="font-size:1.35rem; max-width:900px; margin:0 auto 40px;">
       Mais de <strong>8 milhões de toneladas</strong> de plástico vão parar no mar todos os anos.<br>
       Separe corretamente o lixo e ajude a salvar os oceanos!<br>
       <strong>Juntos podemos mudar isso!</strong>
@@ -180,7 +190,7 @@
     <button onclick="resetGame()">🌊 Reiniciar o Oceano</button>
   </section>
 
-  <footer>
+  <footer style="text-align:center; padding: 25px; background:#04121f; font-size:0.95rem;">
     <p>Feito com ❤️ para o Agrinho 2026 • Sustentabilidade é o caminho</p>
   </footer>
 
@@ -188,27 +198,38 @@
     const ocean = document.getElementById('ocean');
     const scoreElement = document.getElementById('score');
     const progress = document.getElementById('progress');
-
+    
     let trashCollected = 0;
-    const totalTrash = 30;
+    const totalTrash = 40;
 
-    const trashItems = ['🧃', '🫙', '🥾', '🕶️', '💿', '🧻', '📦', '🪫', '🧢', '🩴', '🏐', '🌂', '💩'];
+    // Todos os emojis (originais + novos)
+    const trashItems = [
+      '🧃', '🫙', '🥾', '🕶️', '💿', '🧻', '📦', '🪫', '🧢', '🩴', 
+      '🏐', '🌂', '💩', '🎮', '🍅', '🪨', '🛞', '🛢️', '🛟', 
+      '🧸', '👕', '👖', '🪊', '🪛', '🔩', '💻', '🏀'
+    ];
 
-    // Categoria de cada lixo
+    // Categorias completas
     const trashCategories = {
-      '🧃': 'reciclavel',
-      '🫙': 'reciclavel',
-      '🥾': 'normal',
-      '🕶️': 'reciclavel',
-      '💿': 'eletronico',
-      '🧻': 'normal',
-      '📦': 'reciclavel',
-      '🪫': 'eletronico',
-      '🧢': 'reciclavel',
-      '🩴': 'normal',
-      '🏐': 'reciclavel',
-      '🌂': 'reciclavel',
-      '💩': 'organico'
+      '🧃': 'reciclavel', '🫙': 'reciclavel', '🥾': 'normal', '🕶️': 'reciclavel',
+      '💿': 'eletronico', '🧻': 'normal', '📦': 'reciclavel', '🪫': 'eletronico',
+      '🧢': 'reciclavel', '🩴': 'normal', '🏐': 'reciclavel', '🌂': 'reciclavel',
+      '💩': 'organico',
+      // Novos
+      '🎮': 'eletronico',
+      '🍅': 'organico',
+      '🪨': 'normal',
+      '🛞': 'reciclavel',
+      '🛢️': 'normal',
+      '🛟': 'reciclavel',
+      '🧸': 'normal',
+      '👕': 'reciclavel',
+      '👖': 'reciclavel',
+      '🪊': 'reciclavel',
+      '🪛': 'reciclavel',
+      '🔩': 'reciclavel',
+      '💻': 'eletronico',
+      '🏀': 'reciclavel'
     };
 
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -247,18 +268,19 @@
     function createTrash() {
       const trash = document.createElement('div');
       trash.className = 'trash';
-      trash.textContent = trashItems[Math.floor(Math.random() * trashItems.length)];
-     
+      
+      const item = trashItems[Math.floor(Math.random() * trashItems.length)];
+      trash.textContent = item;
+      trash.dataset.category = trashCategories[item];
+
       const left = Math.random() * 82 + 8;
       const top = Math.random() * 45 + 38;
-     
+
       trash.style.left = `${left}%`;
       trash.style.top = `${top}%`;
       trash.style.transform = `rotate(${Math.random() * 70 - 35}deg)`;
-     
-      trash.draggable = true;
-      trash.dataset.category = trashCategories[trash.textContent];
 
+      trash.draggable = true;
       trash.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', trash.dataset.category);
         trash.style.opacity = '0.4';
@@ -268,32 +290,28 @@
       ocean.appendChild(trash);
     }
 
-    // Configurar todas as lixeiras
+    // Configurar lixeiras
     document.querySelectorAll('.bin').forEach(bin => {
       bin.addEventListener('dragover', (e) => {
         e.preventDefault();
         bin.style.borderColor = '#00ff9d';
         bin.style.transform = 'scale(1.15)';
       });
-
       bin.addEventListener('dragleave', () => {
         bin.style.borderColor = '#ffd700';
         bin.style.transform = 'scale(1)';
       });
-
       bin.addEventListener('drop', (e) => {
         e.preventDefault();
         const binType = bin.dataset.type;
         const draggedCategory = e.dataTransfer.getData('text/plain');
-
         const draggedTrash = document.querySelector('.trash[style*="opacity: 0.4"]');
-       
+
         if (draggedTrash) {
           if (draggedCategory === binType) {
             playCollectSound();
             collectTrash(draggedTrash);
           } else {
-            // Feedback visual de erro
             draggedTrash.style.transition = 'all 0.4s';
             draggedTrash.style.transform = 'scale(0.8) translateY(-30px)';
             setTimeout(() => {
@@ -310,11 +328,11 @@
       trashElement.style.transition = 'all 0.5s ease';
       trashElement.style.transform = 'scale(0.1) translateY(100px)';
       trashElement.style.opacity = '0';
-
+      
       setTimeout(() => {
         trashElement.remove();
         trashCollected++;
-       
+        
         scoreElement.innerHTML = `Lixo coletado: <strong>${trashCollected}</strong>/${totalTrash}`;
         progress.style.width = `${(trashCollected / totalTrash) * 100}%`;
 
@@ -328,13 +346,13 @@
     }
 
     function startGame() {
-      ocean.innerHTML = '';
+      ocean.innerHTML = '<div class="wave"></div><div class="wave" style="animation-delay: -3s; opacity: 0.7;"></div>';
       trashCollected = 0;
       progress.style.width = '0%';
       scoreElement.innerHTML = `Lixo coletado: <strong>0</strong>/${totalTrash}`;
 
       for (let i = 0; i < totalTrash; i++) {
-        setTimeout(() => createTrash(), i * 25);
+        setTimeout(() => createTrash(), i * 30);
       }
     }
 
