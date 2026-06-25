@@ -27,10 +27,11 @@
       font-weight: bold;
       color: #00ff9d;
     }
+
     .hero {
       height: 100vh;
       position: relative;
-      margin-top: 85px; /* espaço para o header fixo */
+      margin-top: 85px;
     }
     #ocean {
       position: absolute;
@@ -38,6 +39,7 @@
       background: linear-gradient(to bottom, #0a6cff, #001f3f);
       overflow: hidden;
     }
+
     .trash {
       position: absolute;
       font-size: 48px;
@@ -49,22 +51,35 @@
     }
     .trash:active { transform: scale(1.5); cursor: grabbing; }
 
-    .bin {
+    /* Lixeiras */
+    .bins-container {
       position: absolute;
-      bottom: 60px;
-      right: 60px;
-      font-size: 120px;
-      background: rgba(0,0,0,0.65);
-      padding: 20px 25px;
-      border-radius: 30px;
-      border: 8px solid #ffd700;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 25px;
       z-index: 100;
+    }
+    .bin {
+      text-align: center;
+      background: rgba(0,0,0,0.65);
+      padding: 15px 20px;
+      border-radius: 20px;
+      border: 6px solid #ffd700;
+      width: 110px;
       transition: all 0.3s;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+      cursor: pointer;
     }
     .bin:hover {
-      transform: scale(1.12);
+      transform: scale(1.1);
       background: rgba(0,0,0,0.85);
+    }
+    .bin.correct { border-color: #00ff9d; }
+    .bin-label {
+      font-size: 1.1rem;
+      margin-top: 8px;
+      font-weight: bold;
     }
 
     .info-panel {
@@ -115,14 +130,6 @@
       cursor: pointer;
       font-weight: bold;
     }
-    button:hover { transform: translateY(-3px); }
-
-    footer {
-      text-align: center;
-      padding: 40px 20px;
-      background: #02101f;
-      font-size: 1.1rem;
-    }
   </style>
 </head>
 <body>
@@ -135,13 +142,29 @@
   <section class="hero">
     <div id="ocean"></div>
 
-    <!-- Lixeira -->
-    <div class="bin" id="bin">🗑️</div>
+    <!-- 4 Lixeiras -->
+    <div class="bins-container" id="bins">
+      <div class="bin" data-type="reciclavel">
+        <div style="font-size: 60px;">♻️</div>
+        <div class="bin-label">Reciclável</div>
+      </div>
+      <div class="bin" data-type="organico">
+        <div style="font-size: 60px;">🌱</div>
+        <div class="bin-label">Orgânico</div>
+      </div>
+      <div class="bin" data-type="eletronico">
+        <div style="font-size: 60px;">🔌</div>
+        <div class="bin-label">Eletrônico</div>
+      </div>
+      <div class="bin" data-type="normal">
+        <div style="font-size: 60px;">🗑️</div>
+        <div class="bin-label">Comum</div>
+      </div>
+    </div>
 
-    <!-- Painel superior -->
     <div class="info-panel">
       <h2 style="font-size: 2.7rem; text-shadow: 0 0 15px black;">Limpe o Oceano!</h2>
-      <p style="font-size: 1.4rem;">Arraste o lixo para a lixeira</p>
+      <p style="font-size: 1.35rem;">Arraste cada lixo para a lixeira <strong>certa</strong></p>
       <div class="score" id="score">Lixo coletado: <strong>0</strong>/30</div>
       <div class="progress-bar"><div class="progress" id="progress"></div></div>
     </div>
@@ -151,7 +174,7 @@
     <h2>Por que isso é importante?</h2>
     <p style="text-align:center; font-size:1.35rem; max-width:900px; margin:0 auto 40px;">
       Mais de <strong>8 milhões de toneladas</strong> de plástico vão parar no mar todos os anos.<br>
-      Isso mata tartarugas, peixes, aves marinhas e destrói os corais.<br>
+      Separe corretamente o lixo e ajude a salvar os oceanos!<br>
       <strong>Juntos podemos mudar isso!</strong>
     </p>
     <button onclick="resetGame()">🌊 Reiniciar o Oceano</button>
@@ -163,31 +186,81 @@
 
   <script>
     const ocean = document.getElementById('ocean');
-    const bin = document.getElementById('bin');
     const scoreElement = document.getElementById('score');
     const progress = document.getElementById('progress');
 
     let trashCollected = 0;
     const totalTrash = 30;
 
-    const trashItems = ['🥤','🛍️','🍼','📱','🥫','🎒','🛠️','🧴','🔋','📦','🥡','🛒','🎮','🪣','🛵','🚲','📺'];
+    const trashItems = ['🧃', '🫙', '🥾', '🕶️', '💿', '🧻', '📦', '🪫', '🧢', '🩴', '🏐', '🌂', '💩'];
+
+    // Categoria de cada lixo
+    const trashCategories = {
+      '🧃': 'reciclavel',
+      '🫙': 'reciclavel',
+      '🥾': 'normal',
+      '🕶️': 'reciclavel',
+      '💿': 'eletronico',
+      '🧻': 'normal',
+      '📦': 'reciclavel',
+      '🪫': 'eletronico',
+      '🧢': 'reciclavel',
+      '🩴': 'normal',
+      '🏐': 'reciclavel',
+      '🌂': 'reciclavel',
+      '💩': 'organico'
+    };
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playCollectSound() {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(400, audioContext.currentTime + 0.3);
+      gain.gain.value = 0.35;
+      gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.35);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start();
+      oscillator.stop(audioContext.currentTime + 0.4);
+    }
+
+    function playWinSound() {
+      let time = audioContext.currentTime;
+      const notes = [600, 800, 1000, 1200];
+      notes.forEach((freq, i) => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = 'triangle';
+        osc.frequency.value = freq;
+        gain.gain.value = 0.4;
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 1.8);
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start(time + i * 0.15);
+        osc.stop(time + 1.8);
+      });
+    }
 
     function createTrash() {
       const trash = document.createElement('div');
       trash.className = 'trash';
       trash.textContent = trashItems[Math.floor(Math.random() * trashItems.length)];
-      
-      // Lixos mais para baixo da página
+     
       const left = Math.random() * 82 + 8;
-      const top = Math.random() * 45 + 38; // Alterado: agora começa mais embaixo
-      
+      const top = Math.random() * 45 + 38;
+     
       trash.style.left = `${left}%`;
       trash.style.top = `${top}%`;
       trash.style.transform = `rotate(${Math.random() * 70 - 35}deg)`;
-      
+     
       trash.draggable = true;
+      trash.dataset.category = trashCategories[trash.textContent];
+
       trash.addEventListener('dragstart', (e) => {
-        e.dataTransfer.setData('text/plain', 'trash');
+        e.dataTransfer.setData('text/plain', trash.dataset.category);
         trash.style.opacity = '0.4';
       });
       trash.addEventListener('dragend', () => trash.style.opacity = '1');
@@ -195,42 +268,60 @@
       ocean.appendChild(trash);
     }
 
-    // Drop na lixeira
-    bin.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      bin.style.borderColor = '#00ff9d';
-      bin.style.transform = 'scale(1.2)';
-    });
+    // Configurar todas as lixeiras
+    document.querySelectorAll('.bin').forEach(bin => {
+      bin.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        bin.style.borderColor = '#00ff9d';
+        bin.style.transform = 'scale(1.15)';
+      });
 
-    bin.addEventListener('dragleave', () => {
-      bin.style.borderColor = '#ffd700';
-      bin.style.transform = 'scale(1)';
-    });
+      bin.addEventListener('dragleave', () => {
+        bin.style.borderColor = '#ffd700';
+        bin.style.transform = 'scale(1)';
+      });
 
-    bin.addEventListener('drop', (e) => {
-      e.preventDefault();
-      bin.style.borderColor = '#ffd700';
-      bin.style.transform = 'scale(1)';
+      bin.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const binType = bin.dataset.type;
+        const draggedCategory = e.dataTransfer.getData('text/plain');
 
-      const draggedTrash = document.querySelector('.trash[style*="opacity: 0.4"]');
-      if (draggedTrash) collectTrash(draggedTrash);
+        const draggedTrash = document.querySelector('.trash[style*="opacity: 0.4"]');
+       
+        if (draggedTrash) {
+          if (draggedCategory === binType) {
+            playCollectSound();
+            collectTrash(draggedTrash);
+          } else {
+            // Feedback visual de erro
+            draggedTrash.style.transition = 'all 0.4s';
+            draggedTrash.style.transform = 'scale(0.8) translateY(-30px)';
+            setTimeout(() => {
+              draggedTrash.style.transform = `rotate(${Math.random() * 70 - 35}deg)`;
+            }, 400);
+          }
+          bin.style.borderColor = '#ffd700';
+          bin.style.transform = 'scale(1)';
+        }
+      });
     });
 
     function collectTrash(trashElement) {
       trashElement.style.transition = 'all 0.5s ease';
-      trashElement.style.transform = 'scale(0.1) translateY(80px)';
+      trashElement.style.transform = 'scale(0.1) translateY(100px)';
       trashElement.style.opacity = '0';
 
       setTimeout(() => {
         trashElement.remove();
         trashCollected++;
-        
+       
         scoreElement.innerHTML = `Lixo coletado: <strong>${trashCollected}</strong>/${totalTrash}`;
         progress.style.width = `${(trashCollected / totalTrash) * 100}%`;
 
         if (trashCollected === totalTrash) {
           setTimeout(() => {
-            alert('🎉 PARABÉNS!\n\nVocê limpou todo o oceano!\nO planeta agradece sua ajuda 🌊🌍');
+            playWinSound();
+            alert('🎉 PARABÉNS!\n\nVocê limpou todo o oceano e separou o lixo corretamente!\n🌍🌊');
           }, 400);
         }
       }, 450);
